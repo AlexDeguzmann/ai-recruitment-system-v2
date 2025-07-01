@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     console.log(`🦁 Starting technical interview for: ${name} (${phone})`);
 
     // Trigger LionAgent Apify actor
-    const apifyResponse = await fetch(`https://api.apify.com/v2/acts/YOUR_USERNAME/lionagent-technical-interviewer/runs`, {
+    const apifyResponse = await fetch(`https://api.apify.com/v2/acts/alexdeguzman/lionagent-processor/runs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.APIFY_TOKEN}`,
