@@ -1,3 +1,4 @@
+// api/zebraagent-trigger.js
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -22,10 +23,21 @@ export default async function handler(req, res) {
       });
     }
 
+    // Check if ZebraAgent is configured
+    if (!process.env.APIFY_TOKEN || !process.env.ZEBRAAGENT_ACTOR_ID) {
+      return res.status(500).json({
+        error: 'ZebraAgent not configured',
+        missing: {
+          apifyToken: !process.env.APIFY_TOKEN,
+          zebraagentActorId: !process.env.ZEBRAAGENT_ACTOR_ID
+        }
+      });
+    }
+
     console.log(`📞 Starting phone screening for: ${name} (${phone})`);
 
     // Trigger ZebraAgent Apify actor
-    const apifyResponse = await fetch(`https://api.apify.com/v2/acts/alexdeguzman/zebraagent-phone-screener/runs`, {
+    const apifyResponse = await fetch(`https://api.apify.com/v2/acts/${process.env.ZEBRAAGENT_ACTOR_ID}/runs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.APIFY_TOKEN}`,
