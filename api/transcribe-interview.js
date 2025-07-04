@@ -39,20 +39,28 @@ export default async function handler(req, res) {
     console.log('📄 Audio file type:', audioFile.mimetype);
     console.log('📂 Audio file name:', audioFile.originalFilename);
 
-    // Whisper accepts webm files directly despite the error message
-    // The issue might be with file extension or headers
+    // Read the audio file data
+    const audioBuffer = fs.readFileSync(audioFile.filepath);
+    console.log('📖 Read audio buffer, size:', audioBuffer.length);
+
+    // Create a temporary file with .webm extension
+    const webmPath = `/tmp/interview_${Date.now()}.webm`;
+    fs.writeFileSync(webmPath, audioBuffer);
+    
+    console.log('💾 Created WebM file:', webmPath);
+
+    // Transcribe with OpenAI Whisper using the proper WebM file
+    console.log('🎯 Sending to Whisper API...');
     const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(audioFile.filepath),
+      file: fs.createReadStream(webmPath),
       model: "whisper-1",
       response_format: "text",
-      // Add this to help Whisper recognize the format
-      prompt: "This is an interview conversation."
+      prompt: "This is an interview conversation between WhaleAgent AI and a job candidate. Transcribe all speech accurately."
     });
 
     console.log('✅ Transcription completed, length:', transcription.length);
-    console.log('📝 Preview:', transcription.substring(0, 100) + '...');
 
-    // Save transcript info (you can add Google Sheets here later)
+    // Save transcript info
     console.log('💾 FULL TRANSCRIPT for', candidateId + ':', transcription);
     console.log('📊 Transcript Stats:', {
       candidateId,
@@ -61,15 +69,17 @@ export default async function handler(req, res) {
       wordCount: transcription.split(' ').length
     });
 
-    // Clean up temp file
+    // Clean up temp files
     fs.unlinkSync(audioFile.filepath);
+    fs.unlinkSync(webmPath);
 
     res.status(200).json({ 
       success: true, 
       transcriptLength: transcription.length,
       candidateId: candidateId,
       jobOrderId: jobOrderId,
-      message: 'Interview transcribed successfully'
+      message: 'Interview transcribed successfully',
+      transcript: transcription // Include full transcript in response for testing
     });
 
   } catch (error) {
