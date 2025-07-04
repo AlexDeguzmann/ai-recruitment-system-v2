@@ -246,19 +246,24 @@
                 });
 
                 mediaRecorder.ondataavailable = (event) => {
+                    console.log('🎵 Data available event fired, size:', event.data.size);
                     if (event.data.size > 0) {
                         audioChunks.push(event.data);
                         console.log('📝 Audio chunk recorded, total chunks:', audioChunks.length);
+                    } else {
+                        console.log('⚠️ Empty audio chunk received');
                     }
                 };
 
                 mediaRecorder.onstop = () => {
-                    console.log('🛑 Recording stopped, processing...');
+                    console.log('🛑 Recording stopped, total chunks collected:', audioChunks.length);
                     processRecording();
                 };
 
-                mediaRecorder.start();
+                // Start recording with time slices (every 1 second)
+                mediaRecorder.start(1000);
                 isRecording = true;
+                console.log('🎬 MediaRecorder started with 1-second intervals');
 
                 console.log('✅ Recording started successfully!');
                 
