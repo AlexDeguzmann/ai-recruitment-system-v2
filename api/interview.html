@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview | Harley Jai Care</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .interview-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        .interview-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .interview-info h2 {
+            color: #2c5aa0;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .interview-info p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .tavus-container {
+            width: 100%;
+            height: 600px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tavus-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 15px;
+        }
+        
+        .loading-message {
+            color: #666;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .instructions h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .instructions ul {
+            color: #555;
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: white;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .interview-container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tavus-container {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 AI Interview</h1>
+        <p id="job-title">Harley Jai Care - Professional Interview</p>
+    </div>
+    
+    <div class="interview-container">
+        <div class="interview-info">
+            <h2 id="welcome-message">Hello! Welcome to your AI interview</h2>
+            <p id="interview-description">You're about to begin your interview with WhaleAgent. Please ensure you have a stable internet connection and are in a quiet environment.</p>
+        </div>
+        
+        <div class="tavus-container" id="tavusContainer">
+            <div class="loading-message" id="loadingMessage">
+                🔄 Loading WhaleAgent AI Interviewer...<br>
+                <small>This may take a few moments</small>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Interview Instructions</h3>
+            <ul>
+                <li><strong>Duration:</strong> 15-25 minutes</li>
+                <li><strong>Format:</strong> Behavioral questions about your experience</li>
+                <li><strong>Method:</strong> Use STAR format (Situation, Task, Action, Result)</li>
+                <li><strong>Technical:</strong> Speak clearly and ensure good lighting</li>
+                <li><strong>Questions:</strong> WhaleAgent will ask follow-up questions based on your responses</li>
+                <li><strong>Completion:</strong> The interview will end automatically</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Powered by WhaleAgent AI • Harley Jai Care Recruitment</p>
+    </div>
+    
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const candidate = urlParams.get('candidate') || urlParams.get('name');
+        const job = urlParams.get('job') || urlParams.get('position');
+        const tavusUrl = urlParams.get('tavus') || urlParams.get('url');
+        
+        // Update page content with parameters
+        if (candidate) {
+            document.getElementById('welcome-message').textContent = `Hello ${candidate}!`;
+        }
+        
+        if (job) {
+            document.getElementById('job-title').textContent = `Harley Jai Care - ${job} Position`;
+            document.getElementById('interview-description').innerHTML = `Welcome to your AI interview for the <strong>${job}</strong> position. WhaleAgent will guide you through the interview process.`;
+        }
+        
+        // Load Tavus iframe
+        function loadTavusInterview() {
+            console.log('Loading Tavus interview...');
+            
+            const container = document.getElementById('tavusContainer');
+            const loadingMessage = document.getElementById('loadingMessage');
+            
+            if (tavusUrl) {
+                // Create iframe for Tavus
+                const iframe = document.createElement('iframe');
+                iframe.src = tavusUrl;
+                iframe.className = 'tavus-iframe';
+                iframe.allow = 'camera; microphone; fullscreen';
+                iframe.allowfullscreen = true;
+                
+                // Replace loading message with iframe
+                setTimeout(() => {
+                    container.innerHTML = '';
+                    container.appendChild(iframe);
+                    console.log('Tavus iframe loaded:', tavusUrl);
+                }, 2000);
+            } else {
+                // Show error if no Tavus URL provided
+                setTimeout(() => {
+                    loadingMessage.innerHTML = '❌ Interview URL not provided.<br><small>Please check your email link.</small>';
+                }, 2000);
+            }
+        }
+        
+        // Load interview when page loads
+        window.addEventListener('load', function() {
+            console.log('Interview page loaded');
+            console.log('Candidate:', candidate);
+            console.log('Position:', job);
+            console.log('Tavus URL:', tavusUrl);
+            
+            loadTavusInterview();
+        });
+        
+        // Add page visibility tracking
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('Interview page hidden');
+            } else {
+                console.log('Interview page visible');
+            }
+        });
+        
+        // Add analytics if needed
+        if (candidate && job) {
+            console.log(`Interview started: ${candidate} for ${job}`);
+        }
+    </script>
+</body>
+</html>
