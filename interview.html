@@ -188,7 +188,12 @@
             document.getElementById('interview-description').innerHTML = `Welcome to your AI interview for the <strong>${job}</strong> position. WhaleAgent will guide you through the interview process.`;
         }
         
-        // Load Tavus iframe
+        // Simple transcription recorder
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+
+        // Load Tavus iframe and start recording
         function loadTavusInterview() {
             console.log('Loading Tavus interview...');
             console.log('Tavus URL:', tavusUrl);
@@ -209,6 +214,11 @@
                     container.innerHTML = '';
                     container.appendChild(iframe);
                     console.log('Tavus iframe loaded:', tavusUrl);
+                    
+                    // Start recording after Tavus loads
+                    setTimeout(() => {
+                        startRecording();
+                    }, 3000);
                 }, 2000);
             } else {
                 // Show error if no Tavus URL provided
@@ -217,6 +227,110 @@
                 }, 2000);
             }
         }
+
+        async function startRecording() {
+            try {
+                console.log('🎤 Attempting to start recording...');
+                
+                // Get microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 16000
+                    }
+                });
+
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                        console.log('📝 Audio chunk recorded, total chunks:', audioChunks.length);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    console.log('🛑 Recording stopped, processing...');
+                    processRecording();
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                console.log('✅ Recording started successfully!');
+                
+                // Show recording indicator
+                const instructions = document.querySelector('.instructions');
+                if (instructions) {
+                    instructions.insertAdjacentHTML('afterbegin', 
+                        '<div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #155724; text-align: center;"><strong>🎤 Recording Active</strong> - Your interview is being transcribed</div>'
+                    );
+                }
+
+            } catch (error) {
+                console.error('❌ Recording failed:', error);
+                
+                const instructions = document.querySelector('.instructions');
+                if (instructions) {
+                    instructions.insertAdjacentHTML('afterbegin', 
+                        '<div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #721c24; text-align: center;"><strong>⚠️ Recording Failed</strong> - Transcription disabled</div>'
+                    );
+                }
+            }
+        }
+
+        async function processRecording() {
+            if (audioChunks.length === 0) {
+                console.log('⚠️ No audio chunks to process');
+                return;
+            }
+
+            try {
+                console.log('📤 Sending audio to Whisper API...');
+                
+                // Combine audio chunks
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                
+                // Get candidate/job info from URL
+                const candidateId = urlParams.get('candidateId') || 'unknown';
+                const jobOrderId = urlParams.get('jobOrderId') || 'unknown';
+                
+                // Send to transcription API
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'interview.webm');
+                formData.append('candidateId', candidateId);
+                formData.append('jobOrderId', jobOrderId);
+
+                const response = await fetch('/api/transcribe-interview', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log('✅ Transcription completed successfully!');
+                    console.log('📄 Transcript length:', result.transcriptLength);
+                } else {
+                    console.error('❌ Transcription failed:', result.error);
+                }
+
+            } catch (error) {
+                console.error('❌ Failed to process recording:', error);
+            }
+        }
+
+        // Stop recording when user leaves
+        window.addEventListener('beforeunload', function() {
+            if (mediaRecorder && isRecording) {
+                console.log('🛑 Stopping recording due to page unload...');
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        });
         
         // Load interview when page loads
         window.addEventListener('load', function() {
