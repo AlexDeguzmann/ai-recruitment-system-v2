@@ -1,4 +1,4 @@
-// api/transcribe-interview.js - ONLY API file needed
+// api/transcribe-interview.js
 import formidable from 'formidable';
 import fs from 'fs';
 import OpenAI from 'openai';
@@ -20,6 +20,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('🎤 Processing interview audio...');
+
     // Parse form data
     const form = formidable({});
     const [fields, files] = await form.parse(req);
@@ -33,18 +35,31 @@ export default async function handler(req, res) {
     }
 
     console.log('🎤 Processing interview audio for:', candidateId);
+    console.log('📁 Audio file size:', audioFile.size, 'bytes');
+    console.log('📄 Audio file type:', audioFile.mimetype);
+    console.log('📂 Audio file name:', audioFile.originalFilename);
 
-    // Transcribe with OpenAI Whisper
+    // Whisper accepts webm files directly despite the error message
+    // The issue might be with file extension or headers
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(audioFile.filepath),
       model: "whisper-1",
-      response_format: "text"
+      response_format: "text",
+      // Add this to help Whisper recognize the format
+      prompt: "This is an interview conversation."
     });
 
     console.log('✅ Transcription completed, length:', transcription.length);
+    console.log('📝 Preview:', transcription.substring(0, 100) + '...');
 
-    // Save to your Google Sheets (simple version)
-    await saveTranscriptSimple(candidateId, jobOrderId, transcription);
+    // Save transcript info (you can add Google Sheets here later)
+    console.log('💾 FULL TRANSCRIPT for', candidateId + ':', transcription);
+    console.log('📊 Transcript Stats:', {
+      candidateId,
+      jobOrderId,
+      transcriptLength: transcription.length,
+      wordCount: transcription.split(' ').length
+    });
 
     // Clean up temp file
     fs.unlinkSync(audioFile.filepath);
@@ -52,6 +67,8 @@ export default async function handler(req, res) {
     res.status(200).json({ 
       success: true, 
       transcriptLength: transcription.length,
+      candidateId: candidateId,
+      jobOrderId: jobOrderId,
       message: 'Interview transcribed successfully'
     });
 
@@ -62,18 +79,4 @@ export default async function handler(req, res) {
       message: error.message 
     });
   }
-}
-
-// Simple function to save transcript
-async function saveTranscriptSimple(candidateId, jobOrderId, transcript) {
-  // For now, just log it (you can add Google Sheets later)
-  console.log('💾 Saving transcript:', {
-    candidateId,
-    jobOrderId,
-    transcriptLength: transcript.length,
-    preview: transcript.substring(0, 100) + '...'
-  });
-
-  // TODO: Add Google Sheets integration later if needed
-  // This keeps the deploy simple for now
 }
