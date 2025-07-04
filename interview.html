@@ -276,7 +276,7 @@
                 });
 
                 mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'audio/webm;codecs=opus'
+                    mimeType: 'audio/wav'
                 });
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -358,7 +358,7 @@
                 console.log('📊 Audio data size:', audioChunks.reduce((total, chunk) => total + chunk.size, 0), 'bytes');
                 
                 // Combine audio chunks
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 console.log('📁 Final audio blob size:', audioBlob.size, 'bytes');
                 
                 // Get candidate/job info from URL
@@ -369,7 +369,7 @@
                 
                 // Send to transcription API
                 const formData = new FormData();
-                formData.append('audio', audioBlob, 'interview.webm');
+                formData.append('audio', audioBlob, 'interview.wav'); // Changed to .wav
                 formData.append('candidateId', candidateId);
                 formData.append('jobOrderId', jobOrderId);
 
