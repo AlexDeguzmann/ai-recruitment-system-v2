@@ -276,7 +276,7 @@
                 });
 
                 mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'audio/wav'
+                    mimeType: 'audio/webm;codecs=opus'
                 });
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -358,7 +358,7 @@
                 console.log('📊 Audio data size:', audioChunks.reduce((total, chunk) => total + chunk.size, 0), 'bytes');
                 
                 // Combine audio chunks
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 console.log('📁 Final audio blob size:', audioBlob.size, 'bytes');
                 
                 // Get candidate/job info from URL
@@ -367,9 +367,9 @@
                 
                 console.log('🏷️ Sending with IDs:', { candidateId, jobOrderId });
                 
-                // Send to transcription API
+                // Send to transcription API - use .mp3 extension to trick Whisper
                 const formData = new FormData();
-                formData.append('audio', audioBlob, 'interview.wav'); // Changed to .wav
+                formData.append('audio', audioBlob, 'interview.mp3'); // Changed extension
                 formData.append('candidateId', candidateId);
                 formData.append('jobOrderId', jobOrderId);
 
