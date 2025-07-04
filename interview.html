@@ -120,6 +120,27 @@
             opacity: 0.8;
         }
         
+        .stop-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .stop-button:hover {
+            background: #c82333;
+        }
+        
         @media (max-width: 768px) {
             .interview-container {
                 padding: 20px;
@@ -132,10 +153,22 @@
             .tavus-container {
                 height: 500px;
             }
+            
+            .stop-button {
+                top: 10px;
+                right: 10px;
+                padding: 10px 15px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Manual Stop Button for Testing -->
+    <button class="stop-button" id="stopButton" onclick="stopRecording()">
+        🛑 STOP & TRANSCRIBE
+    </button>
+
     <div class="header">
         <h1>🤖 AI Interview</h1>
         <p id="job-title">Harley Jai Care - Professional Interview</p>
@@ -163,6 +196,7 @@
                 <li><strong>Technical:</strong> Speak clearly and ensure good lighting</li>
                 <li><strong>Questions:</strong> WhaleAgent will ask follow-up questions based on your responses</li>
                 <li><strong>Completion:</strong> The interview will end automatically</li>
+                <li><strong>Testing:</strong> Click the red "STOP & TRANSCRIBE" button to end and process your recording</li>
             </ul>
         </div>
     </div>
@@ -267,13 +301,16 @@
 
                 console.log('✅ Recording started successfully!');
                 
-                // Show recording indicator
+                // Show recording indicator and stop button
                 const instructions = document.querySelector('.instructions');
                 if (instructions) {
                     instructions.insertAdjacentHTML('afterbegin', 
-                        '<div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #155724; text-align: center;"><strong>🎤 Recording Active</strong> - Your interview is being transcribed</div>'
+                        '<div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #155724; text-align: center;"><strong>🎤 Recording Active</strong> - Your interview is being transcribed. Click the red STOP button when finished.</div>'
                     );
                 }
+                
+                // Show stop button
+                document.getElementById('stopButton').style.display = 'block';
 
             } catch (error) {
                 console.error('❌ Recording failed:', error);
@@ -287,6 +324,29 @@
             }
         }
 
+        // Manual stop function for testing
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                console.log('🛑 Manual stop triggered...');
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                // Hide stop button
+                document.getElementById('stopButton').style.display = 'none';
+                
+                // Update UI
+                const recordingStatus = document.querySelector('[style*="background: #d4edda"]');
+                if (recordingStatus) {
+                    recordingStatus.innerHTML = '<strong>⏳ Processing Transcription...</strong> - Please wait while we transcribe your interview.';
+                    recordingStatus.style.background = '#fff3cd';
+                    recordingStatus.style.color = '#856404';
+                }
+            } else {
+                console.log('⚠️ No active recording to stop');
+            }
+        }
+
         async function processRecording() {
             if (audioChunks.length === 0) {
                 console.log('⚠️ No audio chunks to process');
@@ -295,13 +355,17 @@
 
             try {
                 console.log('📤 Sending audio to Whisper API...');
+                console.log('📊 Audio data size:', audioChunks.reduce((total, chunk) => total + chunk.size, 0), 'bytes');
                 
                 // Combine audio chunks
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                console.log('📁 Final audio blob size:', audioBlob.size, 'bytes');
                 
                 // Get candidate/job info from URL
                 const candidateId = urlParams.get('candidateId') || 'unknown';
                 const jobOrderId = urlParams.get('jobOrderId') || 'unknown';
+                
+                console.log('🏷️ Sending with IDs:', { candidateId, jobOrderId });
                 
                 // Send to transcription API
                 const formData = new FormData();
@@ -314,26 +378,62 @@
                     body: formData
                 });
 
+                console.log('📡 API Response status:', response.status);
+                
                 const result = await response.json();
+                console.log('📋 API Response:', result);
 
                 if (result.success) {
                     console.log('✅ Transcription completed successfully!');
                     console.log('📄 Transcript length:', result.transcriptLength);
+                    
+                    // Update UI
+                    const recordingStatus = document.querySelector('[style*="background: #fff3cd"]');
+                    if (recordingStatus) {
+                        recordingStatus.innerHTML = '<strong>✅ Transcription Complete!</strong> - Your interview has been successfully transcribed and saved.';
+                        recordingStatus.style.background = '#d4edda';
+                        recordingStatus.style.color = '#155724';
+                    }
                 } else {
                     console.error('❌ Transcription failed:', result.error);
+                    
+                    // Update UI with error
+                    const recordingStatus = document.querySelector('[style*="background: #fff3cd"]');
+                    if (recordingStatus) {
+                        recordingStatus.innerHTML = '<strong>❌ Transcription Failed</strong> - Please contact support if this persists.';
+                        recordingStatus.style.background = '#f8d7da';
+                        recordingStatus.style.color = '#721c24';
+                    }
                 }
 
             } catch (error) {
                 console.error('❌ Failed to process recording:', error);
+                
+                // Update UI with error
+                const recordingStatus = document.querySelector('[style*="background: #fff3cd"]');
+                if (recordingStatus) {
+                    recordingStatus.innerHTML = '<strong>❌ Processing Failed</strong> - Network error occurred.';
+                    recordingStatus.style.background = '#f8d7da';
+                    recordingStatus.style.color = '#721c24';
+                }
             }
         }
 
-        // Stop recording when user leaves
-        window.addEventListener('beforeunload', function() {
+        // Stop recording when user leaves (backup method)
+        window.addEventListener('beforeunload', function(e) {
             if (mediaRecorder && isRecording) {
                 console.log('🛑 Stopping recording due to page unload...');
+                // For beforeunload, we need to use synchronous approach
                 mediaRecorder.stop();
                 mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        });
+        
+        // Also try with visibilitychange
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && mediaRecorder && isRecording) {
+                console.log('🛑 Page hidden, stopping recording...');
+                stopRecording();
             }
         });
         
@@ -345,15 +445,6 @@
             console.log('Tavus URL:', tavusUrl);
             
             loadTavusInterview();
-        });
-        
-        // Add page visibility tracking
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                console.log('Interview page hidden');
-            } else {
-                console.log('Interview page visible');
-            }
         });
         
         // Add analytics if needed
