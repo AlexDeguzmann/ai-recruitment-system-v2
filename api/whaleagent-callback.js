@@ -18,14 +18,27 @@ export default async function handler(req, res) {
     const payload = req.body;
     console.log('Tavus callback payload:', JSON.stringify(payload, null, 2));
 
+    // Handle different Tavus callback types
+    const messageType = payload.message_type || payload.event_type;
+    
+    // Skip visual analysis callbacks - we only want voice transcripts
+    if (messageType === 'application.perception_analysis') {
+      console.log('⚠️ Skipping visual analysis callback - waiting for voice transcript');
+      return res.status(200).json({ 
+        message: 'Visual analysis received - waiting for voice transcript',
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Extract conversation details from Tavus callback
     const conversationId = payload.conversation_id;
     const status = payload.status;
-    let transcript = payload.transcript;
+    let transcript = payload.transcript || payload.message?.transcript;
     const recordingUrl = payload.recording_url;
     const duration = payload.duration;
     const participantCount = payload.participant_count;
 
+    console.log(`📊 Callback Type: ${messageType}`);
     console.log(`📊 Callback Status: ${status}`);
     console.log(`🆔 Conversation ID: ${conversationId}`);
 
@@ -48,9 +61,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Only process ended/completed conversations
-    if (status !== 'ended' && status !== 'completed') {
-      console.log(`⚠️ Conversation status: ${status}. Waiting for completion.`);
+    // Only process ended/completed conversations with transcripts
+    if (status !== 'ended' && status !== 'completed' && !transcript) {
+      console.log(`⚠️ Conversation status: ${status}. Waiting for completion with transcript.`);
       return res.status(200).json({ 
         message: `Conversation status: ${status}`,
         conversationId,
@@ -142,7 +155,7 @@ export default async function handler(req, res) {
       duration: duration ? `${Math.round(duration / 60)} minutes` : 'Unknown',
       recordingUrl: recordingUrl || 'Not available',
       timestamp: new Date().toISOString(),
-      note: 'WhaleAgent Processor will score (0-5) and update Google Sheets columns T-W'
+      note: 'WhaleAgent Processor will score (0-5) and update Google Sheets columns U-W'
     });
 
   } catch (error) {
