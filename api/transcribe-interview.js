@@ -70,7 +70,7 @@ export default async function handler(req, res) {
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-    // Find the row by candidateId in column T (Candidate ID column)
+    // Find the row by candidateId in column X (NEW CANDIDATE_ID column)
     console.log('🔍 Finding row for candidateId:', candidateId);
     const findRowResult = await findRowByCandidateId(sheets, spreadsheetId, candidateId);
     
@@ -133,13 +133,13 @@ export default async function handler(req, res) {
   }
 }
 
-// Helper function to find row by candidate ID
+// Helper function to find row by candidate ID in column X
 async function findRowByCandidateId(sheets, spreadsheetId, candidateId) {
   try {
     console.log(`🔍 Searching for candidateId: ${candidateId}`);
     
-    // Search in column T (where candidate IDs are stored)
-    const range = `'Call Queue'!T:T`;
+    // Search in column X (where candidate IDs are now stored)
+    const range = `'Call Queue'!X:X`;
     const result = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range,
@@ -234,7 +234,7 @@ async function getJobDetailsForRow(sheets, spreadsheetId, row) {
     
     // Find Job Order ID column
     const jobOrderIdCol = headerRow.findIndex(header => 
-      header && header.toString().toLowerCase().includes('job_order_id')
+      header && header.toString().trim() === 'JOB_ORDER_ID'
     );
     
     if (jobOrderIdCol === -1) {
@@ -380,17 +380,16 @@ Focus on their suitability for the ${job.title} position specifically.`;
 // Update Google Sheets with interview results
 async function updateInterviewResults(sheets, spreadsheetId, row, transcript, score, analysis) {
   try {
-    // Update VIDEO TRANSCRIPT, VIDEO SCORE, VIDEO ANALYSIS columns
-    // Assuming these are in columns T, U, V based on your processor code
+    // Update VIDEO TRANSCRIPT, VIDEO SCORE, VIDEO ANALYSIS columns (U, V, W)
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `'Call Queue'!T${row}:V${row}`,
+      range: `'Call Queue'!U${row}:W${row}`,
       valueInputOption: 'RAW',
       resource: {
         values: [[
-          transcript.substring(0, 32000), // Column T - VIDEO TRANSCRIPT (limit for Google Sheets)
-          score, // Column U - VIDEO SCORE (0-5)
-          analysis, // Column V - VIDEO ANALYSIS
+          transcript.substring(0, 32000), // Column U - VIDEO TRANSCRIPT (limit for Google Sheets)
+          score, // Column V - VIDEO SCORE (0-5)
+          analysis, // Column W - VIDEO ANALYSIS
         ]]
       }
     });
@@ -398,7 +397,7 @@ async function updateInterviewResults(sheets, spreadsheetId, row, transcript, sc
     // Update status to indicate completion
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `'Call Queue'!P${row}`,
+      range: `'Call Queue'!Q${row}`,
       valueInputOption: 'RAW',
       resource: {
         values: [['Interview Transcribed & Analyzed']]
