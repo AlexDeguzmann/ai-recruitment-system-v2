@@ -70,7 +70,7 @@ export default async function handler(req, res) {
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-    // Find the row by candidateId in column X (NEW CANDIDATE_ID column)
+    // Find the row by candidateId in column X (CANDIDATE_ID column) - FIXED
     console.log('🔍 Finding row for candidateId:', candidateId);
     const findRowResult = await findRowByCandidateId(sheets, spreadsheetId, candidateId);
     
@@ -133,12 +133,12 @@ export default async function handler(req, res) {
   }
 }
 
-// Helper function to find row by candidate ID in column X
+// Helper function to find row by candidate ID in column X - FIXED
 async function findRowByCandidateId(sheets, spreadsheetId, candidateId) {
   try {
     console.log(`🔍 Searching for candidateId: ${candidateId}`);
     
-    // Search in column X (where candidate IDs are now stored)
+    // Search in column X (where candidate IDs are now stored) - FIXED
     const range = `'Call Queue'!X:X`;
     const result = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -232,7 +232,7 @@ async function getJobDetailsForRow(sheets, spreadsheetId, row) {
     const jobOrdersRows = jobOrdersResult.data.values;
     const headerRow = jobOrdersRows[0];
     
-    // Find Job Order ID column
+    // Find Job Order ID column - FIXED to match exact header
     const jobOrderIdCol = headerRow.findIndex(header => 
       header && header.toString().trim() === 'JOB_ORDER_ID'
     );
@@ -268,7 +268,7 @@ async function getJobDetailsForRow(sheets, spreadsheetId, row) {
       };
     }
 
-    // Extract job data
+    // Extract job data - FIXED to match exact headers
     const jobTitleCol = headerRow.findIndex(h => h && h.toString() === 'JOB_TITLE');
     const jobDescCol = headerRow.findIndex(h => h && h.toString() === 'JOB_DESCRIPTION');
 
@@ -377,10 +377,10 @@ Focus on their suitability for the ${job.title} position specifically.`;
   }
 }
 
-// Update Google Sheets with interview results
+// Update Google Sheets with interview results - FIXED COLUMN MAPPING
 async function updateInterviewResults(sheets, spreadsheetId, row, transcript, score, analysis) {
   try {
-    // Update VIDEO TRANSCRIPT, VIDEO SCORE, VIDEO ANALYSIS columns (U, V, W)
+    // Update VIDEO TRANSCRIPT, VIDEO SCORE, VIDEO ANALYSIS columns (U, V, W) - FIXED
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `'Call Queue'!U${row}:W${row}`,
@@ -394,7 +394,22 @@ async function updateInterviewResults(sheets, spreadsheetId, row, transcript, sc
       }
     });
 
-    // Update status to indicate completion
+    // Update status to indicate completion - FIXED TO COLUMN Q
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `'Call Queue'!Q${row}`,
+      valueInputOption: 'RAW',
+      resource: {
+        values: [['Interview Transcribed & Analyzed']]
+      }
+    });
+
+    console.log('✅ Google Sheet updated successfully');
+  } catch (error) {
+    console.error('❌ Failed to update Google Sheets:', error);
+    throw error;
+  }
+} status to indicate completion
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `'Call Queue'!Q${row}`,
